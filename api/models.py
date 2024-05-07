@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class Usuario(AbstractUser):
-    nombre = models.CharField(max_length=255)
     rol = models.CharField(max_length=100)
 
     # Add related_name for groups and user_permissions
@@ -42,11 +41,11 @@ class Proveedor(models.Model):
     telefono = models.CharField(max_length=100)
 
 class Producto(models.Model):
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     nombre_producto = models.CharField(max_length=255)
     descripcion = models.TextField()
     tipo = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
-    proveedor = models.CharField(max_length=255)  # Assuming this should link to a Proveedor via a ForeignKey if required
 
 class Venta(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
