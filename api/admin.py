@@ -4,11 +4,10 @@ from api.models import *
 
 
 admin.site.register(Usuario)
+admin.site.register(Membresía)
 admin.site.register(Clase)
-admin.site.register(Reserva)
-admin.site.register(Venta)
-admin.site.register(Producto)
-admin.site.register(Proveedor)
-admin.site.register(Inventario)
+admin.site.register(EquipoDeportivo)
+admin.site.register(Entrenador)
+admin.site.register(ReservaClase)
 
 # Register your models here.

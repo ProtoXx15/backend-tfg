@@ -1,60 +1,45 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
+from .manager import CustomUserManager
 
-class Usuario(AbstractUser):
-    rol = models.CharField(max_length=100)
+class Usuario(AbstractUser ):
+    fecha_de_nacimiento = models.DateField(auto_now_add=False, blank=True, null=True)
+    email = models.EmailField(unique=True,null=True)
+    objects = CustomUserManager()
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name','password']
 
-    # Add related_name for groups and user_permissions
-    groups = models.ManyToManyField(
-        'auth.Group',
-        verbose_name='groups',
-        blank=True,
-        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-        related_name="custom_user_set",  # Changed related_name
-        related_query_name="user",
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        verbose_name='user permissions',
-        blank=True,
-        help_text='Specific permissions for this user.',
-        related_name="custom_user_set",  # Changed related_name
-        related_query_name="user",
-    )
+class Membresía(models.Model):
+    tipo_de_membresía = models.CharField(max_length=100)
+    precio_mensual = models.DecimalField(max_digits=10, decimal_places=2)
+    duración = models.IntegerField()
+
+class Entrenador(models.Model):
+    nombre = models.CharField(max_length=100)
+    apellido = models.CharField(max_length=100)
+    especialidad = models.CharField(max_length=100)
+    correo_electronico = models.EmailField()
+    número_de_teléfono = models.CharField(max_length=15)
+
+class EquipoDeportivo(models.Model):
+    nombre = models.CharField(max_length=100)
+    descripción = models.TextField()
+    disponibilidad = models.IntegerField()
+    estado = models.CharField(max_length=100)
 
 class Clase(models.Model):
-    nombre_clase = models.CharField(max_length=255)
-    descripcion = models.TextField()
-    horario = models.CharField(max_length=255)
-    instructor = models.CharField(max_length=255)
-    cupo_maximo = models.IntegerField()
+    nombre = models.CharField(max_length=100)
+    descripción = models.TextField()
+    entrenador = models.ForeignKey(Entrenador, on_delete=models.CASCADE, null=True, default=1)
+    capacidad_máxima = models.IntegerField()
+    horario = models.CharField(max_length=100)
+    equipo = models.ForeignKey(EquipoDeportivo, on_delete=models.CASCADE, null=True, default=1)
 
-class Reserva(models.Model):
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    clase = models.ForeignKey(Clase, on_delete=models.CASCADE)
-    fecha_reserva = models.DateTimeField()
 
-class Proveedor(models.Model):
-    nombre_proveedor = models.CharField(max_length=255)
-    contacto = models.CharField(max_length=255)
-    correo_electronico = models.EmailField()
-    telefono = models.CharField(max_length=100)
-
-class Producto(models.Model):
-    proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
-    nombre_producto = models.CharField(max_length=255)
-    descripcion = models.TextField()
-    tipo = models.CharField(max_length=100)
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
-
-class Venta(models.Model):
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    fecha_venta = models.DateTimeField()
-    cantidad = models.IntegerField()
-    total = models.DecimalField(max_digits=10, decimal_places=2)
-
-class Inventario(models.Model):
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
-    cantidad = models.IntegerField()
+class ReservaClase(models.Model):
+    clase = models.ForeignKey(Clase, on_delete=models.CASCADE, null=True, default=1)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, default=1)
+    fecha = models.DateField(default=timezone.now)
+    hora_de_entrada = models.TimeField()
+    hora_de_salida = models.TimeField()

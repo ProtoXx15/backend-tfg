@@ -11,38 +11,22 @@ class ClaseSerializer(serializers.ModelSerializer):
         model = Clase
         fields = '__all__'
 
-class ReservaSerializer(serializers.ModelSerializer):
-    usuario = UsuarioSerializer(read_only=True, many=False)
-    clase = ClaseSerializer(read_only=True, many=False)
+class ReservaClaseSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Reserva
+        model = ReservaClase
         fields = '__all__'
 
-class proveedorSerializer(serializers.ModelSerializer):
+class MembresíaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Proveedor
+        model = Membresía
         fields = '__all__'
 
-class ProductoSerializer(serializers.ModelSerializer):
-    proveedor = proveedorSerializer(read_only=True, many=False)
+class EquipoDeportivoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Producto
+        model = EquipoDeportivo
         fields = '__all__'
 
-class VentaSerializer(serializers.ModelSerializer):
-    usuario = UsuarioSerializer(read_only=True, many=False)
-    producto = ProductoSerializer(read_only=True, many=False)
+class EntrenadorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Venta
+        model = Entrenador
         fields = '__all__'
-
-class InventarioSerializer(serializers.ModelSerializer):
-    producto = ProductoSerializer(read_only=True, many=False)
-    proveedor = proveedorSerializer(read_only=True, many=False)
-    class Meta:
-        model = Inventario
-        fields = '__all__'
-
-
-
-
