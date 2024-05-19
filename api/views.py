@@ -5,6 +5,13 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.hashers import make_password
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.list import ListView
+from django.views.generic.detail import DetailView
+from .models import Membresia
+from django.urls import reverse_lazy
 
 @api_view(['POST'])
 def register(request):
@@ -26,20 +33,83 @@ def login(request):
     token, created = Token.objects.get_or_create(user=user)
     serializer = UsuarioSerializer(instance=user)
     return Response({'token': token.key,'user': serializer.data}, status=status.HTTP_200_OK)
+
 @api_view(['GET'])
 def logout(request):
     token = request.auth
     token.delete()
     return Response(status=status.HTTP_200_OK)
 
+@api_view(['DELETE'])
+def delete_user(request):
+    user = request.user
+    user.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
 # Usuario
 class UsuarioListCreateView(generics.ListCreateAPIView):
-    queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Usuario.objects.all()
+        else:
+            return [self.request.user]
 
-class UsuarioRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    queryset = Usuario.objects.all()
+class UsuarioRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UsuarioSerializer
+    permission_classes= [IsAuthenticated]
+    def update(self, request, *args, **kwargs):
+        # Hashear la contraseña si está presente en los datos de la solicitud
+        user = self.get_object()
+        if 'password' in request.data:
+            user.set_password(request.data['password'])
+            user.save()
+            request.data.pop('password')  # Eliminar la contraseña del diccionario de datos
+
+        return super().update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        # Hashear la contraseña si está presente en los datos de la solicitud
+        if 'password' in request.data:
+            request.data['password'] = make_password(request.data['password'])
+        return self.partial_update(request, *args, **kwargs)
+    def get_object(self):
+        return self.request.user
+    def delete(self, request, *args, **kwargs):
+        token = self.request.auth
+        token.delete()
+        return super().delete(request, *args, **kwargs)
+    
+
+#Membresía   
+class MembresiaListCreateView(generics.ListCreateAPIView):
+   permission_classes= [IsAuthenticated]
+   serializer_class = MembresiaSerializer
+   def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Membresia.objects.all()
+
+class MembresiaRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+    permission_classes= [IsAuthenticated]
+    serializer_class = MembresiaSerializer
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Membresia.objects.all()
+
+# ReservaClase
+class ReservaClaseListCreateView(generics.ListCreateAPIView):
+    serializer_class = ReservaClaseSerializer
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return ReservaClase.objects.all()
+        else:
+            return ReservaClase.objects.filter(usuario=self.request.user)
+
+class ReservaClaseRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = ReservaClaseSerializer
+    permission_classes= [IsAuthenticated]
 
 # Clase
 class ClaseListCreateView(generics.ListCreateAPIView):
@@ -47,41 +117,34 @@ class ClaseListCreateView(generics.ListCreateAPIView):
     serializer_class = ClaseSerializer
 
 class ClaseRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+    
     queryset = Clase.objects.all()
     serializer_class = ClaseSerializer
 
-#Membresía
-class MembresiaListCreateView(generics.ListCreateAPIView):
-    queryset = Membresía.objects.all()
-    serializer_class = MembresíaSerializer
+# Entrenador
+class EntrenadorListCreateView(generics.ListCreateAPIView):
+    serializer_class = EntrenadorSerializer
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Entrenador.objects.all()
 
-class MembresiaRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    queryset = Membresía.objects.all()
-    serializer_class = MembresíaSerializer
+class EntrenadorRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = EntrenadorSerializer
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Entrenador.objects.all()
 
 # EquipoDeportivo
 class EquipoDeportivoListCreateView(generics.ListCreateAPIView):
-    queryset = EquipoDeportivo.objects.all()
     serializer_class = EquipoDeportivoSerializer
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return EquipoDeportivo.objects.all()
 
 class EquipoDeportivoRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    queryset = EquipoDeportivo.objects.all()
     serializer_class = EquipoDeportivoSerializer
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return EquipoDeportivo.objects.all()
 
-# Entrenador
-class EntrenadorListCreateView(generics.ListCreateAPIView):
-    queryset = Entrenador.objects.all()
-    serializer_class = EntrenadorSerializer
 
-class EntrenadorRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    queryset = Entrenador.objects.all()
-    serializer_class = EntrenadorSerializer
-
-# ReservaClase
-class ReservaClaseListCreateView(generics.ListCreateAPIView):
-    queryset = ReservaClase.objects.all()
-    serializer_class = ReservaClaseSerializer
-
-class ReservaClaseRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    queryset = ReservaClase.objects.all()
-    serializer_class = ReservaClaseSerializer

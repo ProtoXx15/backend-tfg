@@ -16,10 +16,10 @@ class ReservaClaseSerializer(serializers.ModelSerializer):
         model = ReservaClase
         fields = '__all__'
 
-class MembresíaSerializer(serializers.ModelSerializer):
+class MembresiaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Membresía
-        fields = '__all__'
+        model = Membresia
+        fields = ['id', 'tipo_de_membresía', 'precio_mensual', 'duración']
 
 class EquipoDeportivoSerializer(serializers.ModelSerializer):
     class Meta:

@@ -4,7 +4,8 @@ class CustomUserManager(BaseUserManager):
     """
     Administrador de usuarios personalizado para este proyecto.
     """
-    def create_user(self, username, first_name, last_name, email, password,**extra_fields):
+    def create_user(self, username, first_name, last_name, email, password,membresia,**extra_fields):
+
         """
         Crear y guardar un usuario con el email y password proporcionado.
         """
@@ -16,6 +17,7 @@ class CustomUserManager(BaseUserManager):
             first_name=first_name,
             last_name=last_name,
             email=email,
+            membresia=membresia,
             **extra_fields
         )
         user.set_password(password)
