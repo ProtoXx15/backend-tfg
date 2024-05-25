@@ -22,8 +22,8 @@ class Usuario(AbstractUser, PermissionsMixin):
     email = models.EmailField(unique=True,null=True)
     membresia = models.ForeignKey(Membresia, on_delete=models.CASCADE,null=False, default=3, choices=membresia_choices)
     objects = CustomUserManager()
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name','password','membresia']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email', 'first_name', 'last_name','password','membresia']
 
 class Entrenador(models.Model):
     especialidad_choices = (

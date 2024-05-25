@@ -1,44 +1,45 @@
 from api.models import *
 from api.serializers import *
-from rest_framework import status, generics
+from rest_framework import status, generics, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.hashers import make_password
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.views.generic.list import ListView
-from django.views.generic.detail import DetailView
 from .models import Membresia
-from django.urls import reverse_lazy
+from django.contrib.auth.models import update_last_login
 
 @api_view(['POST'])
 def register(request):
-        serializer = UsuarioSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            user = Usuario.objects.get(username=request.data['username'])
-            user.set_password(request.data['password'])
-            user.save()
-            token = Token.objects.create(user=user)
-            return Response({'token': token.key, 'user': serializer.data}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = UsuarioSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        user.set_password(request.data['password'])
+        user.save()
+        token = Token.objects.create(user=user)
+        return Response({'token': token.key, 'user': serializer.data}, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def login(request):
-    user = get_object_or_404(Usuario, username=request.data.get('username'))
-    if not user.check_password(request.data.get('password')):
-        return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+    user = get_object_or_404(Usuario, username=request.data['username'])
+    if not user.check_password(request.data['password']):
+        return Response({'details': 'Invalid credentials'}, status=status.HTTP_404_NOT_FOUND)
+    update_last_login(None, user)
     token, created = Token.objects.get_or_create(user=user)
     serializer = UsuarioSerializer(instance=user)
-    return Response({'token': token.key,'user': serializer.data}, status=status.HTTP_200_OK)
+    return Response({'token': token.key, 'user': serializer.data}, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 def logout(request):
-    token = request.auth
-    token.delete()
-    return Response(status=status.HTTP_200_OK)
+    try: 
+        token = request.auth
+        token.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
 def delete_user(request):
@@ -46,43 +47,47 @@ def delete_user(request):
     user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-
 # Usuario
+
 class UsuarioListCreateView(generics.ListCreateAPIView):
     serializer_class = UsuarioSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
         if self.request.user.is_superuser:
             return Usuario.objects.all()
-        else:
-            return [self.request.user]
+        return Usuario.objects.filter(id=self.request.user.id)
 
 class UsuarioRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UsuarioSerializer
-    permission_classes= [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
+
     def update(self, request, *args, **kwargs):
-        # Hashear la contraseña si está presente en los datos de la solicitud
         user = self.get_object()
-        if 'password' in request.data:
-            user.set_password(request.data['password'])
-            user.save()
-            request.data.pop('password')  # Eliminar la contraseña del diccionario de datos
 
-        return super().update(request, *args, **kwargs)
+        # Verifica si el usuario actual es el mismo que el usuario que se va a editar
+        if user == request.user or request.user.is_superuser:
+            if 'password' in request.data:
+                user.set_password(request.data['password'])
+                user.save()
+                request.data.pop('password')
+            return super().update(request, *args, **kwargs)
+        else:
+            return Response({'detail': 'No tienes permiso para editar este usuario.'}, status=403)
 
-    def patch(self, request, *args, **kwargs):
-        # Hashear la contraseña si está presente en los datos de la solicitud
-        if 'password' in request.data:
-            request.data['password'] = make_password(request.data['password'])
-        return self.partial_update(request, *args, **kwargs)
-    def get_object(self):
-        return self.request.user
     def delete(self, request, *args, **kwargs):
-        token = self.request.auth
-        token.delete()
-        return super().delete(request, *args, **kwargs)
-    
+        user = self.get_object()
 
+        # Verifica si el usuario actual es el mismo que el usuario que se va a borrar
+        if user == request.user or request.user.is_superuser:
+            token = self.request.auth
+            if token:
+                token.delete()
+            return super().delete(request, *args, **kwargs)
+        else:
+            return Response({'detail': 'No tienes permiso para borrar este usuario.'}, status=403)
+
+    
 #Membresía   
 class MembresiaListCreateView(generics.ListCreateAPIView):
    permission_classes= [IsAuthenticated]
@@ -117,7 +122,6 @@ class ClaseListCreateView(generics.ListCreateAPIView):
     serializer_class = ClaseSerializer
 
 class ClaseRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    
     queryset = Clase.objects.all()
     serializer_class = ClaseSerializer
 
@@ -146,5 +150,3 @@ class EquipoDeportivoRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     def get_queryset(self):
         if self.request.user.is_superuser:
             return EquipoDeportivo.objects.all()
-
-

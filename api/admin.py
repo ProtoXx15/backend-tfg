@@ -9,5 +9,3 @@ admin.site.register(Clase)
 admin.site.register(EquipoDeportivo)
 admin.site.register(Entrenador)
 admin.site.register(ReservaClase)
-
-# Register your models here.
