@@ -1,10 +1,13 @@
 from rest_framework import serializers
 from api.models import *
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .models import Usuario
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = '__all__'
+        fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
 class ClaseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,6 +19,12 @@ class ReservaClaseSerializer(serializers.ModelSerializer):
         model = ReservaClase
         fields = '__all__'
 
+class ReservaClaseSerializerAll(serializers.ModelSerializer):
+    class Meta:
+        model = ReservaClase
+        fields = '__all__'
+        depth = 2
+        
 class MembresiaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Membresia
@@ -30,3 +39,16 @@ class EntrenadorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Entrenador
         fields = '__all__'
+
+class MiTokenObtenerParSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, usuario):
+        token = super().get_token(usuario)
+
+        # Agregar nombre del usuario al token
+        token['nombre'] = usuario.nombre
+
+        return token
+    
+class MiTokenObtenerParView(TokenObtainPairView):
+    serializer_class = MiTokenObtenerParSerializer

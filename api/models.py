@@ -65,7 +65,6 @@ class Clase(models.Model):
     descripción = models.TextField()
     entrenador = models.ForeignKey(Entrenador, on_delete=models.CASCADE, null=True, default=1)
     capacidad_máxima = models.IntegerField(validators=[MaxValueValidator(10), MinValueValidator(1)])
-    horario = models.CharField(max_length=100)
     equipo = models.ForeignKey(EquipoDeportivo, on_delete=models.CASCADE, null=True, default=1)
 
     REQUIRED_FIELDS = ['nombre_clase', 'descripción', 'entrenador', 'capacidad_máxima', 'horario', 'equipo']
@@ -74,6 +73,5 @@ class Clase(models.Model):
 class ReservaClase(models.Model):
     clase = models.ForeignKey(Clase, on_delete=models.CASCADE, null=True, default=1)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, default=1)
-    fecha = models.DateField(default=timezone.now)
-    hora_de_entrada = models.TimeField()
-    hora_de_salida = models.TimeField()
+    fecha = models.CharField(default=timezone.now)
+    horario = models.CharField( default=timezone.now)

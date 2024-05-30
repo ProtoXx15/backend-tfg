@@ -3,12 +3,17 @@ from api.serializers import *
 from rest_framework import status, generics, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import *
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import *
 from .models import Membresia
+from .serializers import UsuarioSerializer
+import logging
 from django.contrib.auth.models import update_last_login
+from django.http import JsonResponse
+
+logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 def register(request):
@@ -46,6 +51,13 @@ def delete_user(request):
     user = request.user
     user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+def detalles_usuario(request):
+    user=request.user
+    serializer = UsuarioSerializer(user)
+    return Response(serializer.data, status=200)
 
 # Usuario
 
@@ -104,17 +116,37 @@ class MembresiaRetrieveUpdateView(generics.RetrieveUpdateAPIView):
             return Membresia.objects.all()
 
 # ReservaClase
-class ReservaClaseListCreateView(generics.ListCreateAPIView):
-    serializer_class = ReservaClaseSerializer
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return ReservaClase.objects.all()
-        else:
-            return ReservaClase.objects.filter(usuario=self.request.user)
+class VerificarReservaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
-class ReservaClaseRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    serializer_class = ReservaClaseSerializer
-    permission_classes= [IsAuthenticated]
+    def get(self, request):
+        user = request.user
+        reservations = ReservaClase.objects.filter(usuario=user)
+        serializer = ReservaClaseSerializerAll(reservations, many=True)
+        return Response({"reservations": serializer.data}, status=status.HTTP_200_OK)
+
+class ReservarClaseAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        serializer = ReservaClaseSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(usuario=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+def cancelar_reserva(request, fecha, horario, clase):
+    user = request.user
+    reserva = ReservaClase.objects.filter(usuario=user, fecha=fecha, horario=horario, clase=clase)
+    if reserva.exists():
+        reserva.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
 
 # Clase
 class ClaseListCreateView(generics.ListCreateAPIView):
