@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from .manager import CustomUserManager
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+
 class Membresia(models.Model):
     tipo_de_membresia = models.CharField(max_length=100)
     precio_mensual = models.DecimalField(max_digits=10, decimal_places=2)
@@ -20,7 +21,7 @@ class Usuario(AbstractUser, PermissionsMixin):
 )
     fecha_de_nacimiento = models.DateField(auto_now_add=False, blank=True, null=True)
     email = models.EmailField(unique=True,null=True)
-    membresia = models.ForeignKey(Membresia, on_delete=models.CASCADE,null=False, default=3, choices=membresia_choices)
+    membresia = models.ForeignKey(Membresia, on_delete=models.CASCADE,null=False, default=1, choices=membresia_choices)
     objects = CustomUserManager()
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', 'first_name', 'last_name','password','membresia']

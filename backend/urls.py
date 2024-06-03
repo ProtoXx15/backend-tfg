@@ -9,7 +9,11 @@ urlpatterns = [
     path('api/logout/', logout),
     path('api/register/', register),
     path('api/delete/', delete_user),
+    path('api/detalles_usuario/', detalles_usuario),
     path('admin/', admin.site.urls),
+    # path('api/superusuario/usuarios/', listar_todos_usuarios, name='listar_usuarios'),
+    # path('api/superusuario/usuario/<int:usuario_id>/', eliminar_cualquier_usuario, name='eliminar_cualquier_usuario'),
+    # path('api/superusuario/clase/<int:clase_id>/', eliminar_cualquier_clase, name='eliminar_cualquier_clase'),
     path('api/usuario/', UsuarioListCreateView.as_view()),
     path('api/usuario/<int:pk>/', UsuarioRetrieveUpdateView.as_view()),
     path('api/clase/', ClaseListCreateView.as_view()),
@@ -23,6 +27,5 @@ urlpatterns = [
     path('api/reservar_clase/', ReservarClaseAPIView.as_view(), name='reservar_clase'),
     path('api/cancelar_reserva/<str:fecha>/<str:horario>/<str:clase>/', cancelar_reserva, name='cancelar_reserva'),
     path('api/verificar_reserva/', VerificarReservaAPIView.as_view(), name='verificar_reserva'),
-    path('api/detalles_usuario/', detalles_usuario),
 ]
 

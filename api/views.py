@@ -12,6 +12,11 @@ from .serializers import UsuarioSerializer
 import logging
 from django.contrib.auth.models import update_last_login
 from django.http import JsonResponse
+from django.contrib.auth.models import User
+from api.models import ReservaClase, Clase
+from api.serializers import UsuarioSerializer, ReservaClaseSerializer, ClaseSerializer
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
 
 logger = logging.getLogger(__name__)
 
@@ -28,15 +33,29 @@ def register(request):
 
 @api_view(['POST'])
 def login(request):
+    # Obtener el usuario por el nombre de usuario
     user = get_object_or_404(Usuario, username=request.data['username'])
+
+    # Verificar las credenciales del usuario
     if not user.check_password(request.data['password']):
         return Response({'details': 'Invalid credentials'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Actualizar la fecha de último inicio de sesión
     update_last_login(None, user)
+
+    # Generar o obtener el token de autenticación
     token, created = Token.objects.get_or_create(user=user)
+
+    # Serializar el usuario para incluirlo en la respuesta
     serializer = UsuarioSerializer(instance=user)
-    return Response({'token': token.key, 'user': serializer.data}, status=status.HTTP_200_OK)
+
+    if user.is_superuser:
+        return Response({'token': token.key, 'user': serializer.data, 'is_superuser': True}, status=status.HTTP_200_OK)
+    else:
+        return Response({'token': token.key, 'user': serializer.data, 'is_superuser': False}, status=status.HTTP_200_OK)
 
 
+   
 @api_view(['GET'])
 def logout(request):
     try: 
@@ -59,8 +78,40 @@ def detalles_usuario(request):
     serializer = UsuarioSerializer(user)
     return Response(serializer.data, status=200)
 
-# Usuario
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def listar_todos_usuarios(request):
+#     if not request.user.is_superuser:
+#         return Response({'detail': 'No tienes permiso para ver esta información.'}, status=status.HTTP_403_FORBIDDEN)
+    
+#     usuarios = User.objects.all()
+#     serializer = UsuarioSerializer(usuarios, many=True)
+#     return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
+# @api_view(['DELETE'])
+# @permission_classes([IsAuthenticated])
+# def eliminar_cualquier_usuario(request, usuario_id):
+#     if not request.user.is_superuser:
+#         return Response({'detail': 'No tienes permiso para eliminar este usuario.'}, status=status.HTTP_403_FORBIDDEN)
+    
+#     usuario = get_object_or_404(User, id=usuario_id)
+#     usuario.delete()
+#     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# @api_view(['DELETE'])
+# @permission_classes([IsAuthenticated])
+# def eliminar_cualquier_clase(request, clase_id):
+#     if not request.user.is_superuser:
+#         return Response({'detail': 'No tienes permiso para eliminar esta clase.'}, status=status.HTTP_403_FORBIDDEN)
+    
+#     clase = get_object_or_404(Clase, id=clase_id)
+#     clase.delete()
+#     return Response(status=status.HTTP_204_NO_CONTENT)
+
+# Usuario
 class UsuarioListCreateView(generics.ListCreateAPIView):
     serializer_class = UsuarioSerializer
     permission_classes = [permissions.IsAuthenticated]
