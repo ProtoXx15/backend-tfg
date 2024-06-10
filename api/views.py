@@ -7,16 +7,12 @@ from rest_framework.decorators import *
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.hashers import *
-from .models import Membresia
-from .serializers import UsuarioSerializer
 import logging
 from django.contrib.auth.models import update_last_login
 from django.http import JsonResponse
-from django.contrib.auth.models import User
-from api.models import ReservaClase, Clase
-from api.serializers import UsuarioSerializer, ReservaClaseSerializer, ClaseSerializer
 from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
+from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
 
@@ -78,40 +74,33 @@ def detalles_usuario(request):
     serializer = UsuarioSerializer(user)
     return Response(serializer.data, status=200)
 
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def listar_todos_usuarios(request):
-#     if not request.user.is_superuser:
-#         return Response({'detail': 'No tienes permiso para ver esta información.'}, status=status.HTTP_403_FORBIDDEN)
-    
-#     usuarios = User.objects.all()
-#     serializer = UsuarioSerializer(usuarios, many=True)
-#     return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-
-# @api_view(['DELETE'])
-# @permission_classes([IsAuthenticated])
-# def eliminar_cualquier_usuario(request, usuario_id):
-#     if not request.user.is_superuser:
-#         return Response({'detail': 'No tienes permiso para eliminar este usuario.'}, status=status.HTTP_403_FORBIDDEN)
-    
-#     usuario = get_object_or_404(User, id=usuario_id)
-#     usuario.delete()
-#     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# @api_view(['DELETE'])
-# @permission_classes([IsAuthenticated])
-# def eliminar_cualquier_clase(request, clase_id):
-#     if not request.user.is_superuser:
-#         return Response({'detail': 'No tienes permiso para eliminar esta clase.'}, status=status.HTTP_403_FORBIDDEN)
-    
-#     clase = get_object_or_404(Clase, id=clase_id)
-#     clase.delete()
-#     return Response(status=status.HTTP_204_NO_CONTENT)
-
 # Usuario
+
+class UsuarioCreate(APIView):
+    def post(self, request, format='json'):
+        serializer = UsuarioSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            if user:
+                token = Token.objects.create(user=user)
+                json = serializer.data
+                json['token'] = token.key
+                return Response(json, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class UsuarioDetailView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        user = request.user
+        try:
+            detalle_usuario = Usuario.objects.get(pk=user.pk)
+            serializer= UsuarioDetailSerializer(detalle_usuario)
+        except Usuario.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 class UsuarioListCreateView(generics.ListCreateAPIView):
     serializer_class = UsuarioSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -197,7 +186,6 @@ def cancelar_reserva(request, fecha, horario, clase):
         return Response(status=status.HTTP_204_NO_CONTENT)
     else:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
 
 # Clase
 class ClaseListCreateView(generics.ListCreateAPIView):
