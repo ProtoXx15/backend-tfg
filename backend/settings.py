@@ -155,5 +155,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ALLOWED_HOSTS = ['localhost','backend-tfg-production-144d.up.railway.app','*']
-CSRF_TRUSTED_ORIGINS = ['http://*','https://backend-tfg-production-144d.up.railway.app']
-CORS_ALLOWED_ORIGINS = ['https://backend-tfg-production-144d.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['http://*','https://backend-tfg-production-144d.up.railway.app', 'https://protogym.vercel.app']
+CORS_ALLOWED_ORIGINS = ['https://backend-tfg-production-144d.up.railway.app', 'https://protogym.vercel.app']
